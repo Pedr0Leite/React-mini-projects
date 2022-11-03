@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from "react";
 import PokemonList from "./PokemonList";
-import axios from 'axios';
+import axios from "axios";
 import Pagination from "./Pagination";
 import InputSearchPokemon from "./InputSearchPokemon";
-import PokemonSearchFind from "./PokemonSearchFind";
+// import PokemonSearchFind from "./PokemonSearchFind";
+var background = "https://images3.alphacoders.com/273/273289.jpg";
 
 function App() {
-  const [pokemon, setPokemon] = useState([]);
-  const [currentPageURL, setCurrentPageURL] = useState('https://pokeapi.co/api/v2/pokemon');
+  const [pokemonList, setPokemonList] = useState([]);
+  const [showPokemonList, setShowPokemonList] = useState(false);
+  const [currentPageURL, setCurrentPageURL] = useState("");
   const [nextPageURL, setNextPageURL] = useState();
   const [prevPageURL, setPrevPageURL] = useState();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const [pokemonInputText, setPokemonInputText] = useState('');
-  const [pokemonSearchURL, setpokemonSearchURL] = useState('https://pokeapi.co/api/v2/pokemon/ditto');
-  const [pokemonSearchFind, setPokemonSearchFind] = useState('');
+  const currentPageURLConst = "https://pokeapi.co/api/v2/pokemon";
+
+  const myStyle = {
+    backgroundImage: `url('${background}')`,
+    // height:'100vh',
+    fontSize: "20px",
+    backgroundSize: "cover",
+    backgroundRepeat: "repeat",
+    textAlign: "center",
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -23,56 +32,53 @@ function App() {
       {
         cancelToken: new axios.CancelToken(c => cancel = c)
       }).then(res =>{
-      setLoading(false);
-      setNextPageURL(res.data.next);
-      setPrevPageURL(res.data.previous);
-      setPokemon(res.data.results.map(p => p.name))
-    })
-
+        setLoading(false);
+        setNextPageURL(res.data.next);
+        setPrevPageURL(res.data.previous);
+        setPokemonList(res.data.results.map(p => p.name))
+      })
+      
     //prevent race conditions from multiple requests
     return () => cancel()
   }, [currentPageURL])
 
-  function goToNextPage(){
+  async function onClickGetList() {
+    setLoading(true);
+
+    await axios.get(currentPageURL)
+      .then((res) => {
+        setLoading(false);
+        setShowPokemonList(true);
+        setCurrentPageURL(currentPageURLConst);
+        setNextPageURL(res.data.next);
+        setPrevPageURL(res.data.previous);
+        setPokemonList(res.data.results.map((p) => p.name));
+      });
+  }
+
+  function goToNextPage() {
     setCurrentPageURL(nextPageURL);
   }
 
-  function goToPrevPage(){
+  function goToPrevPage() {
     setCurrentPageURL(prevPageURL);
   }
 
+  if (loading) return "Loading...";
 
-  useEffect(() => {
-    setLoading(true);
-    let cancel = '';
-    axios.get(pokemonSearchURL,
-      {
-        cancelToken: new axios.CancelToken(c => cancel = c)
-      }).then(res =>{
-      setLoading(false);
-      setpokemonSearchURL(pokemonSearchURL)
-      setPokemonSearchFind(res.data.id)
-      console.log('res.data.id :', res.data.id);
-    })
-
-    //prevent race conditions from multiple requests
-    return () => cancel()
-  }, [pokemonSearchURL])
-
-
-  if(loading) return "Loading..."
-  
   return (
-    <div>
-    <InputSearchPokemon pokemonText={pokemonInputText}/>
-    <br></br>
-    <PokemonSearchFind pokemonSearched={pokemonSearchFind}/>
-    <br></br>
-    <PokemonList pokemon={pokemon} />
-    <Pagination 
-    goToNextPage={nextPageURL ? goToNextPage : null}
-    goToPrevPage={prevPageURL ? goToPrevPage : null}
-    />
+    <div style={myStyle}>
+      <InputSearchPokemon />
+      <br></br>
+      <h3>Pokemon List</h3>
+      {!showPokemonList && (
+        <button onClick={onClickGetList}>Get Pokemon List</button>
+      )}
+      {pokemonList !== [] && <PokemonList pokemon={pokemonList} />}
+      <Pagination
+        goToNextPage={nextPageURL ? goToNextPage : null}
+        goToPrevPage={prevPageURL ? goToPrevPage : null}
+      />
     </div>
   );
 }
