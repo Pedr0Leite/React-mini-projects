@@ -1,29 +1,14 @@
 import React, { useState, useEffect } from "react";
-import PokemonList from "./PokemonList";
 import axios from "axios";
-import Pagination from "./Pagination";
 import InputSearchPokemon from "./InputSearchPokemon";
-// import PokemonSearchFind from "./PokemonSearchFind";
-var background = "https://images3.alphacoders.com/273/273289.jpg";
+import "./assets/index.css";
 
 function App() {
-  const [pokemonList, setPokemonList] = useState([]);
-  const [showPokemonList, setShowPokemonList] = useState(false);
+  const [pokemon, setPokemon] = useState([]);
   const [currentPageURL, setCurrentPageURL] = useState("");
-  const [nextPageURL, setNextPageURL] = useState();
-  const [prevPageURL, setPrevPageURL] = useState();
   const [loading, setLoading] = useState(false);
 
   const currentPageURLConst = "https://pokeapi.co/api/v2/pokemon";
-
-  const myStyle = {
-    backgroundImage: `url('${background}')`,
-    // height:'100vh',
-    fontSize: "20px",
-    backgroundSize: "cover",
-    backgroundRepeat: "repeat",
-    textAlign: "center",
-  };
 
   useEffect(() => {
     setLoading(true);
@@ -33,52 +18,26 @@ function App() {
         cancelToken: new axios.CancelToken(c => cancel = c)
       }).then(res =>{
         setLoading(false);
-        setNextPageURL(res.data.next);
-        setPrevPageURL(res.data.previous);
-        setPokemonList(res.data.results.map(p => p.name))
+        
       })
       
     //prevent race conditions from multiple requests
     return () => cancel()
   }, [currentPageURL])
 
-  async function onClickGetList() {
-    setLoading(true);
+  // async function onClickGetList() {
+  //   setLoading(true);
 
-    await axios.get(currentPageURL)
-      .then((res) => {
-        setLoading(false);
-        setShowPokemonList(true);
-        setCurrentPageURL(currentPageURLConst);
-        setNextPageURL(res.data.next);
-        setPrevPageURL(res.data.previous);
-        setPokemonList(res.data.results.map((p) => p.name));
-      });
-  }
-
-  function goToNextPage() {
-    setCurrentPageURL(nextPageURL);
-  }
-
-  function goToPrevPage() {
-    setCurrentPageURL(prevPageURL);
-  }
+  //   await axios.get(currentPageURL)
+  //     .then((res) => {
+  //       setLoading(false);
+  // }
 
   if (loading) return "Loading...";
 
   return (
-    <div style={myStyle}>
+    <div className="flex justify-center items-center h-screen bg-gradient-to-r from-green-500 via-orange-500 to-purple-500">
       <InputSearchPokemon />
-      <br></br>
-      <h3>Pokemon List</h3>
-      {!showPokemonList && (
-        <button onClick={onClickGetList}>Get Pokemon List</button>
-      )}
-      {pokemonList !== [] && <PokemonList pokemon={pokemonList} />}
-      <Pagination
-        goToNextPage={nextPageURL ? goToNextPage : null}
-        goToPrevPage={prevPageURL ? goToPrevPage : null}
-      />
     </div>
   );
 }

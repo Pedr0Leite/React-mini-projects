@@ -1,0 +1,5 @@
+Dont forget to run the frontend and the backend in two seperate terminals.
+
+frontend: npm start
+
+backend: npm start
