@@ -1,12 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import PokemonSearchFind from "./PokemonSearchFind";
+import GetFullListButton from "./GetFullListButton";
+import RandomOneButton from "./RandomOneButton";
+import Pagination from "./Pagination";
+import PokemonList from "./PokemonList";
 
 export default function InputSearchPokemon() {
 
   const [searchInfo, setSearchInfo] = useState('');
   const [pokemonSearchURL, setpokemonSearchURL] = useState('https://pokeapi.co/api/v2/pokemon/');
   const [pokemonSearchFind, setPokemonSearchFind] = useState({});
+  const [currentPageURL, setCurrentPageURL] = useState("");
+  const [prevPageURL, setPrevPageURL] = useState("");
+  const [nextPageURL, setNextPageURL] = useState("");
+  const [pokemonName, setPokemonName] = useState([]);
+  const [pokemon, setPokemon] = useState({});
 
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +29,8 @@ export default function InputSearchPokemon() {
   const handleClick = (e) => {
     e.preventDefault();
     setLoading(true);
-    
+    setSearchInfo('');
+    setPokemon([]);
     axios.get(pokemonSearchURL + searchInfo).then(res =>{
       setLoading(false);
       setpokemonSearchURL('https://pokeapi.co/api/v2/pokemon/');
@@ -43,7 +53,7 @@ export default function InputSearchPokemon() {
   }
   
   const handleClickRandom = (e) => {
-    setSearchInfo('');
+    setPokemon([]);
     const randomId = Math.floor(Math.random() * 809);
 
     axios.get(pokemonSearchURL + randomId).then(res =>{
@@ -66,6 +76,53 @@ export default function InputSearchPokemon() {
 
   //Max number of id=809 (Generation VII)
 
+  const handleFullList = (e) => {
+    setLoading(true);
+    setSearchInfo('');
+    setPokemonSearchFind({});
+    let cancel = '';
+
+    // axios.get(currentPageURL,
+    axios.get("https://pokeapi.co/api/v2/pokemon",
+      {
+        cancelToken: new axios.CancelToken(c => cancel = c)
+      }).then(res =>{
+      setLoading(false);
+      setNextPageURL(res.data.next);
+      setPrevPageURL(res.data.previous);
+      setPokemonName(res.data.results.map(p => p.name))
+    })
+
+
+
+  }
+
+  function goToNextPage(){
+    setCurrentPageURL(nextPageURL);
+  }
+
+  function goToPrevPage(){
+    setCurrentPageURL(prevPageURL);
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    let cancel = '';
+    axios.get(currentPageURL,
+      {
+        cancelToken: new axios.CancelToken(c => cancel = c)
+      }).then(res =>{
+      setLoading(false);
+      setNextPageURL(res.data.next);
+      setPrevPageURL(res.data.previous);
+      setPokemon(res.data.results.map(p => p.name))
+    })
+
+    //prevent race conditions from multiple requests
+    return () => cancel()
+  }, [currentPageURL])
+
+
   return (
     <div className="content-center">
       <h2 className="text-3xl font-bold underline text-center">Search your pokemon info!</h2>
@@ -79,15 +136,18 @@ export default function InputSearchPokemon() {
         <button onClick={handleClick} className="text-white absolute right-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Search</button>
     </div>
         <p />
-        <div id="input-buttons" className="grid justify-items-center"> 
-      <button onClick={handleClickRandom} className="inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
-        <span className="px-12 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
-          Random One!
-        </span>
-      </button>
+        <div id="input-buttons" className="grid grid-cols-2 gap-2"> 
+        <GetFullListButton getFullList={handleFullList }/>
+        <RandomOneButton handleClickRandom={handleClickRandom}/>
       </div>
         {pokemonSearchFind.id && <PokemonSearchFind pokemonSearched={pokemonSearchFind}/>}
+      <PokemonList pokemon={pokemon} />
+    <div>
+    {pokemon.length != 0 && <Pagination
+    goToNextPage={nextPageURL ? goToNextPage : null}
+    goToPrevPage={prevPageURL ? goToPrevPage : null}
+    />}
+    </div>
     </div>
   );
 }
-
