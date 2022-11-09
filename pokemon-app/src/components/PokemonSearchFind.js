@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import TypesPokemon from './TypesPokemon';
 
 export default function PokemonSearchFind(props) {
