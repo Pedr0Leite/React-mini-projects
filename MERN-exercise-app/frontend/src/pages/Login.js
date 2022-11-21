@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useLogin } from '../hooks/useLogin';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const { login, error, isLoading } = useLogin();
 
     const onChangeEmail = (e) => {
         setEmail(e.target.value)
@@ -16,7 +18,7 @@ const Login = () => {
         e.preventDefault();
 
         //send request to the server
-        console.log(email, password);
+        await login(email, password);
     }
 
     return (
@@ -35,7 +37,8 @@ const Login = () => {
             onChange={onChangePassword}
             value={password}
             />
-            <button>Log in</button>
+            <button disabled={isLoading}>Log in</button>
+            {error && <div className="error">{error}</div>}
         </form>
     )
 }
