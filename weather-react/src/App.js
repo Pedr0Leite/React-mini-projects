@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const api = {
-  key: "592ee20aac789e248f53f7f0b79f7508",
+  key: "",
   base: "https://api.openweathermap.org/data/2.5/"
 }
 
